@@ -3,12 +3,13 @@
     $.jProfile = function(element, options) {
 
         var defaults = {
-            width: 640,
-            height: 400,
+            width: 1024,
+            height: 557,
             center: true,
             draggable: true,
-            zoom: false,
-            animate: false
+            zoom: true,
+            animate: false,
+            duration: 50
         }
 
         var plugin = this , $img = $(element)
@@ -43,7 +44,7 @@
             $.removeData($img, 'jProfile')
         }
 
-        var wrap = function($wrapper, w, h) {
+        var wrap = function($wrapper, w, h, anim) {
             var wrapW = 2*(w - plugin.settings.width) + plugin.settings.width,
                 wrapH = 2*(h - plugin.settings.height) + plugin.settings.height,
                 wrapX = (plugin.settings.width - w),
@@ -52,7 +53,7 @@
             // normalization step
             if (w<plugin.settings.width) wrapX = 0 , wrapW=plugin.settings.width
             if (h<plugin.settings.height) wrapY = 0 , wrapH=plugin.settings.height
-
+            
             var res = {
                 width: wrapW,
                 height: wrapH,
@@ -60,7 +61,8 @@
                 left: wrapX
             }
 
-            $wrapper.css(res)
+            if (anim) $wrapper.animate(res, plugin.settings.duration)
+            else $wrapper.css(res)
             return res
         }
 
@@ -71,7 +73,7 @@
                 pos = $img.position()
 
             var $jProfile = $('<div class="jProfile" />'),
-            $wrapper = $('<div class="wrapper" />')
+                $wrapper = $('<div class="wrapper" />')
 
             var wrapper = wrap($wrapper, w, h)
 
@@ -90,53 +92,100 @@
             }
 
             $img.wrap($jProfile).wrap($wrapper)
+            $jProfile = $img.closest('.jProfile')
+            $wrapper = $img.closest('.wrapper')
             $img.css({
                 left: x,
                 top: y,
                 position: 'relative'
             })
 
+            function zoom(dir) {
+                width = $img.width()
+
+                // stop all animations
+                //$img.stop()
+                var wrapper
+
+                if (dir == 'Up') {
+                    var scW = Math.abs(width-w*scalingFactor),
+                        scH = Math.abs(h*scW/w)
+
+                    // Normalize new dimensions
+                    if (scW > w || scH > h) scW = w
+                    if (scW < plugin.settings.width || scH < plugin.settings.height)
+                        scW = plugin.settings.width
+
+                    // do nothing if no width change
+                    if ($img.width() == scW) return false
+
+                    var scX = $img.position().left + ($img.width() - scW)/2,
+                        scY = $img.position().top + ($img.height() - scH)/2
+
+                    // compute new wrapper
+                    var wrapW = $wrapper.width(),
+                        wrapH = $wrapper.height()
+
+                    wrapper = wrap($wrapper, scW, scH, true)
+                    scX -= (wrapW-wrapper.width)/2
+                    scY -= (wrapH-wrapper.height)/2
+                } else {
+                    var scW = Math.abs(width+w*scalingFactor),
+                        scH = Math.abs(h*scW/w)
+
+                    // Normalize new dimensions
+                    if (scW > w || scH > h) scW = w
+                    if (scW < plugin.settings.width || scH < plugin.settings.height)
+                        scW = plugin.settings.width
+
+                    // do nothing if no width change
+                    if ($img.width() == scW) return false
+
+                    var scX = $img.position().left - (scW - $img.width())/2,
+                        scY = $img.position().top - (scH - $img.height())/2
+
+                    // compute new wrapper
+                    var wrapW = $wrapper.width(),
+                        wrapH = $wrapper.height()
+
+                    wrapper = wrap($wrapper, scW, scH, true)
+                    scX += (wrapper.width-wrapW)/2
+                    scY += (wrapper.height-wrapH)/2
+                }
+
+                // normalization after wrapping resize
+                console.log(scX)
+                console.log(scY)
+                var dX = wrapper.width-plugin.settings.width/2
+                var dY = wrapper.height-plugin.settings.height/2
+                if (scX < 0) scX = 0
+                else if (scX > dX) scX = dX
+                if (scY < 0) scY = 0
+                else if (scY > dY) scY = dY
+
+                console.log(scX)
+                console.log(scY)
+
+                $img.animate({
+                    width: scW,
+                    top: scY,
+                    left: scX
+                }, plugin.settings.duration)
+
+                return false                
+            }
+
             if (plugin.settings.zoom) {
                 var scalingFactor = 0.1
                 $img.bind('mousewheel', function(event, delta) {
-                    var dir = delta > 0 ? 'Up' : 'Down',
-                        width = $img.width()
-
-                    // stop previous zooming
-                    $img.stop()
-
-                    if (dir == 'Up') {
-                        var scW = Math.abs(width-w*scalingFactor),
-                            scH = Math.abs(h*scW/w)
-
-                        // Normalize new dimensions
-                        if (scW > w || scH > h) scW = w
-                        if (scW < plugin.settings.width || scH < plugin.settings.height)
-                            scW = plugin.settings.width
-
-                        var scX = $img.position().left + ($img.width() - scW)/2,
-                            scY = $img.position().top + ($img.height() - scH)/2
+                    var dir = delta > 0 ? 'Up' : 'Down'
+                    if ($img.is(':animated') || $wrapper.is(':animated')) {
+                        setTimeout(function() {
+                            zoom(dir)
+                        }, plugin.settings.duration)
                     } else {
-                        var scW = Math.abs(width+w*scalingFactor),
-                            scH = Math.abs(h*scW/w)
-
-                        // Normalize new dimensions
-                        if (scW > w || scH > h) scW = w
-                        if (scW < plugin.settings.width || scH < plugin.settings.height)
-                            scW = plugin.settings.width
-
-                        var scX = $img.position().left - (scW - $img.width())/2,
-                            scY = $img.position().top - (scH - $img.height())/2
+                        zoom(dir)
                     }
-
-                    $img.animate({
-                            width: scW,
-                            top: scY,
-                            left: scX
-                        }, 200, 'swing', function() {
-                    })
-
-                    return false
                 })
             }
 
@@ -157,7 +206,7 @@
                         steps = 0
                         counter = setInterval(function() {
                             steps = 0
-                        },100)
+                        }, plugin.settings.duration)
                     },
                     opts.drag = function(event,ui) {
                         steps++
