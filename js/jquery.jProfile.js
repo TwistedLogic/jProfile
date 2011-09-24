@@ -3,8 +3,8 @@
     $.jProfile = function(element, options) {
 
         var defaults = {
-            width: 1280,
-            height: 557,
+            width: 640,
+            height: 400,
             center: true,
             draggable: true,
             zoom: true,
@@ -41,6 +41,10 @@
             $('.jProfile').first().before($img).remove()
             $img.draggable("destroy").css({ top: coords.top , left: coords.left })
             $.removeData($img, 'jProfile')
+        }
+
+        var wrap = function($wrapper, w, y) {
+
         }
 
         var build = function() {
@@ -99,18 +103,31 @@
 
                     if (dir == 'Up') {
                         var scW = Math.abs(width-w*scalingFactor),
-                            scH = Math.abs(h*scW/w),
-                            scX = $img.position().left + ($img.width() - scW)/2,
+                            scH = Math.abs(h*scW/w)
+
+                        // Normalize new dimensions
+                        if (scW > w || scH > h) scW = w
+                        if (scW < plugin.settings.width || scH < plugin.settings.height)
+                            scW = plugin.settings.width
+
+                        var scX = $img.position().left + ($img.width() - scW)/2,
                             scY = $img.position().top + ($img.height() - scH)/2
                     } else {
                         var scW = Math.abs(width+w*scalingFactor),
-                            scH = Math.abs(h*scW/w),
-                            scX = $img.position().left - (scW - $img.width())/2,
+                            scH = Math.abs(h*scW/w)
+
+                        // Normalize new dimensions
+                        if (scW > w || scH > h) scW = w
+                        if (scW < plugin.settings.width || scH < plugin.settings.height)
+                            scW = plugin.settings.width
+
+                        var scX = $img.position().left - (scW - $img.width())/2,
                             scY = $img.position().top - (scH - $img.height())/2
                     }
 
                     $img.animate({
                             width: scW,
+                            height: scH,
                             top: scY,
                             left: scX
                         }, 200, 'swing', function() {
