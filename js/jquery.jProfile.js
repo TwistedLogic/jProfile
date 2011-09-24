@@ -7,7 +7,7 @@
             height: 400,
             center: true,
             draggable: true,
-            zoom: true,
+            zoom: false,
             animate: false
         }
 
@@ -43,8 +43,25 @@
             $.removeData($img, 'jProfile')
         }
 
-        var wrap = function($wrapper, w, y) {
+        var wrap = function($wrapper, w, h) {
+            var wrapW = 2*(w - plugin.settings.width) + plugin.settings.width,
+                wrapH = 2*(h - plugin.settings.height) + plugin.settings.height,
+                wrapX = (plugin.settings.width - w),
+                wrapY = (plugin.settings.height - h)
 
+            // normalization step
+            if (w<plugin.settings.width) wrapX = 0 , wrapW=plugin.settings.width
+            if (h<plugin.settings.height) wrapY = 0 , wrapH=plugin.settings.height
+
+            var res = {
+                width: wrapW,
+                height: wrapH,
+                top: wrapY,
+                left: wrapX
+            }
+
+            $wrapper.css(res)
+            return res
         }
 
         var build = function() {
@@ -53,32 +70,19 @@
                 h = $img.height(),
                 pos = $img.position()
 
-            var wrapW = 2*(w - plugin.settings.width) + plugin.settings.width,
-                wrapH = 2*(h - plugin.settings.height) + plugin.settings.height,
-                wrapX = (plugin.settings.width - w),
-                wrapY = (plugin.settings.height - h)
+            var $jProfile = $('<div class="jProfile" />'),
+            $wrapper = $('<div class="wrapper" />')
 
-            if (w<plugin.settings.width) wrapX = 0 , wrapW=plugin.settings.width
-            if (h<plugin.settings.height) wrapY = 0 , wrapH=plugin.settings.height
+            var wrapper = wrap($wrapper, w, h)
 
-            var $wrapper = $('<div />')
-            $wrapper.css({
-                position: 'relative',
-                width: wrapW,
-                height: wrapH,
-                top: wrapY,
-                left: wrapX
-            })
-
-            var $jProfile = $('<div class="jProfile" />')
             $jProfile.css({
                 width: plugin.settings.width,
                 height: plugin.settings.height,
                 overflow: 'hidden'
             })
 
-            var x = (wrapW - w)/2,
-                y = (wrapH - h)/2
+            var x = (wrapper.width - w)/2,
+                y = (wrapper.height - h)/2
 
             if (!plugin.settings.center) {
                 x = w > plugin.settings.width ? w - plugin.settings.width + pos.left : pos.left
@@ -127,7 +131,6 @@
 
                     $img.animate({
                             width: scW,
-                            height: scH,
                             top: scY,
                             left: scX
                         }, 200, 'swing', function() {

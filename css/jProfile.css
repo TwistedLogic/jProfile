@@ -3,4 +3,8 @@
 	background: lightgray;
 }
 
+.jProfile .wrapper {
+	position: relative;
+}
+
 .jProfile img:hover { cursor: move }
