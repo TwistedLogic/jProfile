@@ -1,2 +1,6 @@
-.crover-box { margin: 0 auto }
-.crover-box img:hover { cursor: move }
+.jProfile {
+	margin: 0 auto;
+	overflow: hidden;
+}
+
+.jProfile img:hover { cursor: move }
