@@ -5,9 +5,10 @@
         var defaults = {
             width: 1280,
             height: 557,
-            center: false,
+            center: true,
+            draggable: true,
             zoom: false,
-            animation: false
+            animate: false
         }
 
         var plugin = this , $img = $(element)
@@ -68,7 +69,8 @@
             var $jProfile = $('<div class="jProfile" />')
             $jProfile.css({
                 width: plugin.settings.width,
-                height: plugin.settings.height
+                height: plugin.settings.height,
+                overflow: 'hidden'
             })
 
             var x = (wrapW - w)/2,
@@ -80,7 +82,11 @@
             }
 
             $img.wrap($jProfile).wrap($wrapper)
-            $img.css({ position: 'relative', top: y , left: x })
+            $img.css({
+                left: x,
+                top: y,
+                position: 'relative'
+            })
 
             if (plugin.settings.zoom) {
                 var scalingFactor = 0.2
@@ -115,91 +121,95 @@
                             })
                     }
                     return false;
-                });
-
+                })
             }
 
-            var points
-            var steps
-            var counter
+            if (plugin.settings.draggable) {
+                
+                var opts = {
+                    containment: 'parent',
+                    scroll: false,
+                    distance: 10
+                }
 
-            $img.draggable({
-                containment: 'parent',
-                scroll: false ,
-                distance: 10,
-            /*start: function() {
-                    $img.stop()
-                    points = []
-                    steps = 0
-                    counter = setInterval(function() {
+                if (plugin.settings.animate) {
+                    var points, steps, counter
+                    
+                    opts.start = function() {
+                        $img.stop()
+                        points = []
                         steps = 0
-                    },100)
-                },
-                drag: function(event,ui) {
-                    steps++
-                    if (points.push(ui) == 6) points.shift()
-                },
-                stop: function(event,ui) {
+                        counter = setInterval(function() {
+                            steps = 0
+                        },100)
+                    },
+                    opts.drag = function(event,ui) {
+                        steps++
+                        if (points.push(ui) == 6) points.shift()
+                    },
+                    opts.stop = function(event,ui) {
 
-                    clearInterval(counter)
-                    console.log('steps: ' + steps)
-                    if (steps == 0) return
+                        clearInterval(counter)
+                        console.log('steps: ' + steps)
+                        if (steps == 0) return
 
-                    if (points.length < 5) {
-                        console.log('too few points recorded: ' + points.length)
-                        return
+                        if (points.length < 5) {
+                            console.log('too few points recorded: ' + points.length)
+                            return
+                        }
+
+                        var p0 = {
+                            x: points[0].position.left ,
+                            y: points[0].position.top
+                        }
+                        var p1 = {
+                            x: points[2].position.left ,
+                            y: points[2].position.top
+                        }
+                        var p2 = {
+                            x: points[4].position.left ,
+                            y: points[4].position.top
+                        }
+
+                        console.log(p0)
+                        console.log(p1)
+                        console.log(p2)
+
+                        var C = 5
+                        var dx = Math.sqrt(Math.pow(p1.x-p0.x,2) + Math.pow(p1.y-p0.y,2))
+                        var dy = Math.sqrt(Math.pow(p2.x-p1.x,2) + Math.pow(p2.y-p1.y,2))
+                        var cX = C*dx
+                        var cY = C*dy
+
+                        console.log(dx)
+                        console.log(dy)
+
+                        if (p1.x <= p0.x && p2.x <= p0.x && p2.y >= p0.y) {
+                            var x = p2.x - cX
+                            var y = p2.y + cY
+                        } else if (p1.x >= p0.x && p2.x >= p0.x && p2.y >= p0.y) {
+                            var x = p2.x + cX
+                            var y = p2.y + cY
+                        } else if (p1.x >= p0.x && p2.x >= p0.x && p2.y <= p0.y) {
+                            var x = p2.x + cX
+                            var y = p2.y - cY
+                        } else if (p1.x <= p0.x && p2.x <= p0.x && p2.y <= p0.y) {
+                            var x = p2.x - cX
+                            var y = p2.y - cY
+                        } else {
+                            console.log('error, none of those cases')
+                            return
+                        }
+
+                        $img.animate({
+                            left: x ,
+                            top: y
+                        },1000,'swing')
                     }
+                }
 
-                    var p0 = {
-                        x: points[0].position.left ,
-                        y: points[0].position.top
-                    }
-                    var p1 = {
-                        x: points[2].position.left ,
-                        y: points[2].position.top
-                    }
-                    var p2 = {
-                        x: points[4].position.left ,
-                        y: points[4].position.top
-                    }
-
-                    console.log(p0)
-                    console.log(p1)
-                    console.log(p2)
-
-                    var C = 5
-                    var dx = Math.sqrt(Math.pow(p1.x-p0.x,2) + Math.pow(p1.y-p0.y,2))
-                    var dy = Math.sqrt(Math.pow(p2.x-p1.x,2) + Math.pow(p2.y-p1.y,2))
-                    var cX = C*dx
-                    var cY = C*dy
-
-                    console.log(dx)
-                    console.log(dy)
-
-                    if (p1.x <= p0.x && p2.x <= p0.x && p2.y >= p0.y) {
-                        var x = p2.x - cX
-                        var y = p2.y + cY
-                    } else if (p1.x >= p0.x && p2.x >= p0.x && p2.y >= p0.y) {
-                        var x = p2.x + cX
-                        var y = p2.y + cY
-                    } else if (p1.x >= p0.x && p2.x >= p0.x && p2.y <= p0.y) {
-                        var x = p2.x + cX
-                        var y = p2.y - cY
-                    } else if (p1.x <= p0.x && p2.x <= p0.x && p2.y <= p0.y) {
-                        var x = p2.x - cX
-                        var y = p2.y - cY
-                    } else {
-                        console.log('error, none of those cases')
-                        return
-                    }
-
-                    $img.animate({
-                        left: x ,
-                        top: y
-                    },1000,'swing')
-
-                }*/
-            })
+                $img.draggable(opts)
+            }
         }
 
         plugin.init()
