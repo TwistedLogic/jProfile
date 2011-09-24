@@ -1,10 +1,14 @@
 .jProfile {
 	margin: 0 auto;
 	background: lightgray;
+	position: relative;
 }
 
 .jProfile .wrapper {
 	position: relative;
 }
 
-.jProfile img:hover { cursor: move }
+.jProfile img:hover {
+	cursor: move;
+	position: relative;
+}
