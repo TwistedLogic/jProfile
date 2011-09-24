@@ -1,0 +1,9 @@
+*:focus {
+	outline: 0;
+	outline: none;
+}
+*::-moz-focus-inner { border: none }
+
+body {
+	background: #2C2C2C;
+}
