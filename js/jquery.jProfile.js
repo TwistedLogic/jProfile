@@ -7,7 +7,7 @@
             height: 557,
             center: true,
             draggable: true,
-            zoom: false,
+            zoom: true,
             animate: false
         }
 
@@ -89,38 +89,34 @@
             })
 
             if (plugin.settings.zoom) {
-                var scalingFactor = 0.2
+                var scalingFactor = 0.1
                 $img.bind('mousewheel', function(event, delta) {
                     var dir = delta > 0 ? 'Up' : 'Down',
-                    vel = Math.abs(delta);
+                        width = $img.width()
+
+                    // stop previous zooming
+                    $img.stop()
+
                     if (dir == 'Up') {
-                        $img.stop()
-                        var width = $img.width()
-                        var scW =  width - width*scalingFactor
-                        var scH = h*scW/w
-                        var scX = $img.position().left + ($img.width() - scW)/2
-                        var scY = $img.position().top + ($img.height() - scH)/2
-                        $img.animate({
-                            width: scW ,
-                            top: scY ,
-                            left: scX
-                        }, 200, 'swing', function() {
-                            })
+                        var scW = Math.abs(width-w*scalingFactor),
+                            scH = Math.abs(h*scW/w),
+                            scX = $img.position().left + ($img.width() - scW)/2,
+                            scY = $img.position().top + ($img.height() - scH)/2
                     } else {
-                        $img.stop()
-                        var width = $img.width()
-                        var scW =  width + width*scalingFactor
-                        var scH = h*scW/w
-                        var scX = $img.position().left - (scW - $img.width())/2
-                        var scY = $img.position().top - (scH - $img.height())/2
-                        $img.animate({
-                            width: scW ,
-                            top: scY ,
+                        var scW = Math.abs(width+w*scalingFactor),
+                            scH = Math.abs(h*scW/w),
+                            scX = $img.position().left - (scW - $img.width())/2,
+                            scY = $img.position().top - (scH - $img.height())/2
+                    }
+
+                    $img.animate({
+                            width: scW,
+                            top: scY,
                             left: scX
                         }, 200, 'swing', function() {
-                            })
-                    }
-                    return false;
+                    })
+
+                    return false
                 })
             }
 

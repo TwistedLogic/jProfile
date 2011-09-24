@@ -1,5 +1,6 @@
 .jProfile {
 	margin: 0 auto;
+	background: lightgray;
 }
 
 .jProfile img:hover { cursor: move }
