@@ -2,6 +2,12 @@
 (function($) {
     $.jProfile = function(element, options) {
 
+        var TOP_LEFT = 0,
+            TOP_RIGHT = 1,
+            BOTTOM_RIGHT = 2,
+            BOTTOM_LEFT = 3,
+            viewport, mouseX, mouseY
+
         var defaults = {
             width: 768,
             height: 457,
@@ -27,8 +33,6 @@
             var minX = -(w-plugin.settings.width),
                 minY = -(h-plugin.settings.height),
                 maxX = 0, maxY = 0
-
-                console.log(minY)
 
             var res = {
                 left: x,
@@ -67,11 +71,21 @@
             $img.css(pos)
 
             function zoom(dir) {
-                var scalingFactor = 0.1
-                width = $img.width()
+                var scalingFactor = 0.1,
+                    //scaleStep = w*scalingFactor
+                    scaleStep = 50
+                var width = $img.width()
+
+                if (mouseX < plugin.settings.width/2) {
+                    if (mouseY < plugin.settings.height/2) viewport = TOP_LEFT
+                    else viewport = BOTTOM_LEFT
+                } else {
+                    if (mouseY < plugin.settings.height/2) viewport = TOP_RIGHT
+                    else viewport = BOTTOM_RIGHT
+                }
 
                 if (dir == 'Up') {
-                    var scW = Math.abs(width-w*scalingFactor),
+                    var scW = Math.abs(width-scaleStep),
                         scH = Math.abs(h*scW/w)
 
                     // Normalize new dimensions
@@ -81,13 +95,38 @@
                     // do nothing if no width change
                     if ($img.width() == scW) return false
 
-                    var dX = $img.width - scW
-                    var dY = $img.height - scH
+                    var scX = $img.position().left + (scW - $img.width())/2,
+                        scY = $img.position().top + (scH - $img.height())/2
 
-                    var scX = $img.position().left + ($img.width() - scW)/2,
-                        scY = $img.position().top + ($img.height() - scH)/2
+                    var dX = ($img.width() - scW),
+                        dY = ($img.height() - scH),
+                        vpW = plugin.settings.width/2,
+                        vpH = plugin.settings.height/2
+
+                    if (viewport == TOP_LEFT) {
+                        var percX = 100-100*mouseX/vpW,
+                            percY = 100-100*mouseY/vpH,
+                            offsetX = dX/2/100*percX + dX/2,
+                            offsetY = dY/2/100*percY + dY/2
+                        var scX = $img.position().left + dX - offsetX,
+                            scY = $img.position().top + dY - offsetY
+                    } else if (viewport == TOP_RIGHT) {
+                        var percX = 100-100*(mouseX-vpW)/vpW,
+                            percY = 100-100*mouseY/vpH,
+                            offsetX = dX/2/100*percX + dX/2,
+                            offsetY = dY/2/100*percY + dY/2
+                        var scX = $img.position().left - dX + offsetX,
+                            scY = $img.position().top + dY - offsetY
+                    } else if (viewport == BOTTOM_RIGHT) {
+                        var scX = $img.position().left + ($img.width() - scW),
+                            scY = $img.position().top + ($img.height() - scH)
+                    } else {
+                        var scX = $img.position().left + ($img.width() - scW),
+                            scY = $img.position().top - ($img.height() - scH)
+                    }
+                    
                 } else {
-                    var scW = Math.abs(width+w*scalingFactor),
+                    var scW = Math.abs(width+scaleStep),
                         scH = Math.abs(h*scW/w)
 
                     // Normalize new dimensions
@@ -98,6 +137,20 @@
 
                     var scX = $img.position().left - (scW - $img.width())/2,
                         scY = $img.position().top - (scH - $img.height())/2
+
+                    if (viewport == TOP_LEFT) {
+                        var scX = $img.position().left - ($img.width() - scW),
+                            scY = $img.position().top - ($img.height() - scH)
+                    } else if (viewport == TOP_RIGHT) {
+                        var scX = $img.position().left + ($img.width() - scW),
+                            scY = $img.position().top - ($img.height() - scH)
+                    } else if (viewport == BOTTOM_RIGHT) {
+                        var scX = $img.position().left + ($img.width() - scW),
+                            scY = $img.position().top + ($img.height() - scH)
+                    } else {
+                        var scX = $img.position().left - ($img.width() - scW),
+                            scY = $img.position().top + ($img.height() - scH)
+                    }
                 }
 
                 var pos = contain(scW, scH, scX, scY)
@@ -106,7 +159,7 @@
                     width: scW,
                     top: pos.top,
                     left: pos.left
-                }, plugin.settings.duration)
+                }, plugin.settings.duration, 'swing')
 
                 return false                
             }
@@ -114,13 +167,12 @@
             if (plugin.settings.zoom) {
                 $img.bind('mousewheel', function(event, delta) {
                     var dir = delta > 0 ? 'Up' : 'Down'
-                    if ($img.is(':animated')) {
-                        setTimeout(function() {
-                            zoom(dir)
-                        }, plugin.settings.duration)
-                    } else {
-                        zoom(dir)
-                    }
+                    $img.stop()
+                    zoom(dir)
+                })
+                $jProfile.mousemove(function(e) {
+                    mouseX = e.pageX - this.offsetLeft;
+                    mouseY = e.pageY - this.offsetTop;
                 })
             }
 
